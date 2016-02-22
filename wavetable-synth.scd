@@ -3,7 +3,7 @@
 // For this synth you will nee to download the wavetables AKWF from
 // "http://www.adventurekid.se/akrt/waveforms/adventure-kid-waveforms/"
 // I suggest to make a selection since there are more than 4000 tables
-// This patch also uses the two objects from QuarksGui.new:
+// This patch also uses the two objects from the Quarks (use QuarksGui.new to fetch them):
 // Voicer and VoicerMIDISocket
 // you need a midi keyboard with 8 cc
 
