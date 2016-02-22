@@ -11,8 +11,8 @@
 Server.default.waitForBoot{
 
 	s = Server.default;
-	~tables=[];
-	//define midi cc, use your own
+	~tables=[]; // an empty Array to address the wavetables loaded in Buffers
+	//define midi continuos controllers, use your own keyboard
 	~bufoffsetCC = 2;
 	~scaleCC = 4;
 	~volCC = 27;
