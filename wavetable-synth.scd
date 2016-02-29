@@ -25,13 +25,13 @@ Server.default.waitForBoot{
 
 	//change the path
 (
-	"/Users/you/Sounds/AKWF/*/*.wav".pathMatch.collect({|paths, i|
+	"/Users/Olarte/Sounds/AKWF/*/*.wav".pathMatch.collect({|paths, i|
 		~tables=~tables.add(
 			Buffer.readChannel(
 				s,paths, startFrame:0, numFrames:512, bufnum:i, channels:0,
 				action:{|b|	b.loadToFloatArray(
-					action:{|a|a.value.as(Signal).asWavetable;
-						[a.bufnum, ": done"].postln;
+					action:{|a, i|a.value.as(Signal).asWavetable;
+						[i.bufnum, ": done"].postln;
 							});
 						});
 			)};
