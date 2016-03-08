@@ -1,0 +1,86 @@
+/*
+// keep going with wavetables
+*/
+Server.default.waitForBoot{
+
+	var tables = 40;
+	s = Server.default;
+
+
+	SynthDef(\vosc,{ |outbus=0, gate=1, amp=1.0, bufoffset=0, bufoffsetMod=8, freq=440, detune=1, freqMod=1, detuneMod=0,  mul=0, add=10, ffreq=10000, rq=0, mode=0, saturation=0.95|
+		var env, sig, modulator;
+		env = EnvGen.ar(Env.asr(0.01, 1, 0.01), gate, doneAction:2);
+		modulator = VOsc.ar(bufoffsetMod, [freqMod, freqMod + detuneMod], 0, mul, add);
+		sig =  VOsc.ar(bufoffset, [freq, freq + detune] + modulator);
+		sig = BMoog.ar(sig, ffreq, rq, mode, saturation);
+		Out.ar(outbus, sig * env * amp)
+		}).add;
+
+
+	s.sync;
+
+	tables.do{|i|currentEnvironment.put(("buf"++i).asSymbol, Buffer.alloc(s, 2048, bufnum:i);)};
+
+	s.sync;
+
+	tables.do{|i|currentEnvironment.at(("buf"++i).asSymbol).setn(0, Signal.sineFill(1024,1.0/Array.series(i+1,1,1)).asWavetable)};
+
+	"tables loaded".postln;
+	s.sync;
+
+
+	MIDIClient.init;
+	MIDIIn.connectAll;
+	//s.sendMsg(\s_new, "feedbackOsc", 1010, 1, 1);
+
+	~detuneCC = 2;
+	~bufoffsetCC = 4;
+	~freqModCC = 3;
+	~bufoffsetModCC = 5;
+	~detuneMod = 13;
+	~mulCC = 9;
+	~addCC = 10;
+	~ffreqCC = 11;
+	~rqCC = 12;
+
+	s.sync;
+(
+		s.sendMsg(\s_new, "vosc", 1010, 1, 1);
+		MIDIFunc.noteOn({arg vel, note, ch, src;s.sendMsg(\n_set, 1010,\freq, note.midicps)});
+		//MIDIFunc.noteOff({arg vel, note, ch, src;s.sendMsg(\n_set, 1010,\mFrq, note.midicps)});
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \bufoffset, val.linlin(0,127,0.0,tables-2))},~bufoffsetCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \bufoffsetMod, val.linlin(0,127,0.0,tables-2))},~bufoffsetModCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \detune, val.linlin(0,127,0,1000))},~detuneCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \detuneMod, val.linlin(0,127,0,1000))},~detuneModCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \freqMod, val.linexp(0,127,1,20000))},~freqModCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \mul, val.linlin(0,127,0,20000.0))},~mulCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \add, val.linlin(0,127,0,20000.0))},~addCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \ffreq, val.linexp(0,127,20,20000.0))},~ffreqCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \rq, val.linlin(0,127,0.0,2.0))},~rqCC);
+);
+}
+
+
+
+
+/*
+
+	// With Voicer, requiere dependencies installed from Quarks
+
+~voice = Voicer(8, "feedbackOsc");
+~keyboard = VoicerMIDISocket([\all, \omni], ~voice);
+~voice.free;~keyboard.free;
+~voice.panic;
+
+	(
+		~keyboard.addControl(2, \mFB, 0, [0, 2.0, \linear] );
+		~keyboard.addControl(4, \mFrq, 0, [10,10000,\exponential] );
+		~keyboard.addControl(3, \fB, 0, [0,2.0,\linear]);
+		~keyboard.addControl(10, \width, 0, [0.01,2.0,\exponential]);
+		~keyboard.addControl(9, \mul, 0, [0, 20000, \exponential] );
+		~keyboard.addControl(11, \ffreq, 0, [10, 20000, \exponential]);
+		~keyboard.addControl(12, \rq, 0, [0.01,1.2,\exponential]);
+	//	~keyboard.addControl(13, \rq, 0, [1,1000.0,\exponential]);
+);
+
+	*/
