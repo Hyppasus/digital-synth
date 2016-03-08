@@ -4,6 +4,7 @@
 Server.default.waitForBoot{
 
 	var tables = 40;
+	var wavetableSize = 512;
 	s = Server.default;
 
 
@@ -19,11 +20,11 @@ Server.default.waitForBoot{
 
 	s.sync;
 
-	tables.do{|i|currentEnvironment.put(("buf"++i).asSymbol, Buffer.alloc(s, 2048, bufnum:i);)};
+	tables.do{|i|currentEnvironment.put(("buf"++i).asSymbol, Buffer.alloc(s, wavetableSize, bufnum:i);)};
 
 	s.sync;
 
-	tables.do{|i|currentEnvironment.at(("buf"++i).asSymbol).setn(0, Signal.sineFill(1024,1.0/Array.series(i+1,1,1)).asWavetable)};
+	tables.do{|i|currentEnvironment.at(("buf"++i).asSymbol).setn(0, Signal.sineFill(wavetableSize*0.5,1.0/Array.series(i+1,1,1)).asWavetable)};
 
 	"tables loaded".postln;
 	s.sync;
@@ -70,27 +71,3 @@ Server.default.waitForBoot{
 }
 
 
-
-
-
-/*
-
-	// With Voicer, requiere dependencies installed from Quarks
-
-~voice = Voicer(8, "feedbackOsc");
-~keyboard = VoicerMIDISocket([\all, \omni], ~voice);
-~voice.free;~keyboard.free;
-~voice.panic;
-
-	(
-		~keyboard.addControl(2, \mFB, 0, [0, 2.0, \linear] );
-		~keyboard.addControl(4, \mFrq, 0, [10,10000,\exponential] );
-		~keyboard.addControl(3, \fB, 0, [0,2.0,\linear]);
-		~keyboard.addControl(10, \width, 0, [0.01,2.0,\exponential]);
-		~keyboard.addControl(9, \mul, 0, [0, 20000, \exponential] );
-		~keyboard.addControl(11, \ffreq, 0, [10, 20000, \exponential]);
-		~keyboard.addControl(12, \rq, 0, [0.01,1.2,\exponential]);
-	//	~keyboard.addControl(13, \rq, 0, [1,1000.0,\exponential]);
-);
-
-	*/
