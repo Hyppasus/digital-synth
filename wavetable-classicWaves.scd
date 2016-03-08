@@ -15,7 +15,9 @@ Server.default.waitForBoot{
 		sig =  VOsc.ar(bufoffset, [freq, freq + detune] + modulator);
 		//sig = MoogLadder.ar(sig, ffreq+(freq*keyTrack), rq, saturation);
 		sig = MoogVCF.ar(sig, ffreq+(freq*keyTrack), rq, saturation);
-		Out.ar(outbus, sig * env * amp)
+		//sig = (sig * env * amp).tanh;
+		sig = (sig * env * amp);
+		Out.ar(outbus, sig)
 		}).add;
 
 
@@ -72,8 +74,8 @@ Server.default.waitForBoot{
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \add, val.linlin(0,127,0,20000.0))},~addCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \ffreq, val.linexp(0,127,20,20000.0))},~ffreqCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \rq, val.linlin(0,127,0.0,2.0))},~rqCC);
-		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \rq, val.linlin(0,127,0.0,4.0))},~modeCC);
-		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \rq, val.linlin(0,127,0.0,10.0))},~saturationCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \mode, val.linlin(0,127,0.0,4.0))},~modeCC);
+		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \saturation, val.linlin(0,127,0.0,10.0))},~saturationCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \amp, val.linlin(0,127,0.0,1.0))},~ampCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \keyTrack, val.linlin(0,127,0,2.0))},~keytrackCC);
 
