@@ -8,11 +8,11 @@ Server.default.waitForBoot{
 	s = Server.default;
 
 
-	SynthDef(\vosc,{ |outbus=0, gate=1, amp=1.0, bufoffset=0, bufoffsetMod=8, freq=440, detune=1, freqMod=1, detuneMod=0,  mul=0, add=10, ffreq=10000, rq=0, mode=0, saturation=0.95, keyTrack=1|
+	SynthDef(\vosc,{ |outbus=0, gate=1, amp=1.0, bufoffset=0, bufoffsetMod=8, freq=440, detune=1, freqMod=1, detuneMod=0,  mul=0, add=10, ffreq=10000, rq=0, mode=0, saturation=0.95, keyTrack=1, bend=0|
 		var env, sig, modulator;
 		env = EnvGen.ar(Env.asr(0.01, 1, 0.01), gate, doneAction:2);
 		modulator = VOsc.ar(bufoffsetMod, [freqMod, freqMod + detuneMod], 0, mul, add);
-		sig =  VOsc.ar(bufoffset, [freq, freq + detune] + modulator);
+		sig =  VOsc.ar(bufoffset, [freq+bend, freq + detune + bend] + modulator);
 		//sig = MoogLadder.ar(sig, ffreq+(freq*keyTrack), rq, saturation);
 		sig = MoogVCF.ar(sig, ffreq+(freq*keyTrack), rq, saturation);
 		//sig = (sig * env * amp).tanh;
@@ -44,7 +44,6 @@ Server.default.waitForBoot{
 
 	MIDIClient.init;
 	MIDIIn.connectAll;
-	//s.sendMsg(\s_new, "feedbackOsc", 1010, 1, 1);
 
 	~detuneCC = 2;
 	~bufoffsetCC = 4;
@@ -64,7 +63,6 @@ Server.default.waitForBoot{
 (
 		s.sendMsg(\s_new, "vosc", 1010, 1, 1);
 		MIDIFunc.noteOn({arg vel, note, ch, src;s.sendMsg(\n_set, 1010,\freq, note.midicps)});
-		//MIDIFunc.noteOff({arg vel, note, ch, src;s.sendMsg(\n_set, 1010,\mFrq, note.midicps)});
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \bufoffset, val.linlin(0,127,0.0,tables-2))},~bufoffsetCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \bufoffsetMod, val.linlin(0,127,0.0,tables-2))},~bufoffsetModCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \detune, val.linlin(0,127,0,100))},~detuneCC);
@@ -78,7 +76,7 @@ Server.default.waitForBoot{
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \saturation, val.linlin(0,127,0.0,10.0))},~saturationCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \amp, val.linlin(0,127,0.0,1.0))},~ampCC);
 		MIDIFunc.cc({|val,num,ch,src|s.sendMsg(\n_set, 1010, \keyTrack, val.linlin(0,127,0,2.0))},~keytrackCC);
-
+		MIDIFunc.bend({|val,num,ch,src|s.sendMsg(\n_set, 1010, \bend, val.linlin(0,16384,0,1200))});
 	);
 }
 
