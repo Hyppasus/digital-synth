@@ -77,7 +77,7 @@ Ndef(\synth).source=~synth4;
 ~synth1={arg cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10, cc11, cc12, cc13, cc14, cc15, cc16, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
 
 	var carFreq= 30, modFreq=40, gate=1, attack=1, decay=1, sustain=120, release=4, depth=10, offset=10, ffreq = 120, rq = 0, morphing = 0, amp=127;
-    var sin, osc, filter1, filter2, output, env;
+    var modulator, carrier, filter1, filter2, output, env;
 
 	carFreq = cc1.linlin(0, 127, 20, 20000);
 	modFreq = cc2.linlin(0, 127, 20, 20000);
@@ -96,15 +96,16 @@ Ndef(\synth).source=~synth4;
 	amp = cc12.linlin(0, 127, 0, 1);
 
     env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), gate, doneAction:2);
-	sin = SinOsc.kr(modFreq,0,depth,offset);
-    osc= SinOsc.ar(carFreq+sin);
+	modulator = SinOsc.kr(modFreq,0,depth,offset);
+    carrier = SinOsc.ar(carFreq+modulator);
     filter1 = DFM1.ar(osc, ffreq, rq);
     filter2 = BMoog.ar(osc, ffreq, rq, 2, 0.5);
 	//var filter1 = LPF.ar(osc, ffreq, rq);
 	//var filter2 = HPF.ar(osc, ffreq, rq);
 	output = XFade2.ar (filter1, filter2, morphing,);
 	output*env*0.5*amp;}
-)
+);
+
 (
 ~synth2={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, depth=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0,amp=1|
     var sin = Saw.kr(modFreq,depth,offset);
