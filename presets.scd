@@ -3,6 +3,7 @@ Using Ndef as a flexible architecture to use presets.
 Fixing the midi mapping allow to move from one to another preset without remapping each time.
 For that the arguments have to be shared between synths and the scaling of the values can be done inside the synth.
 I suggest to use generic names like cc1, cc2...etc and remap them inside the synth with names that make more sense to the UGen's graph.
+All the controllers come inside the synth on the midi range and get the actual values inside the synth, this allow to control different ranges with the same controller.
 In the code below an example of setting 24 continuos controls, note in and pitch bend.
 Program change can move between synths by changing the source of the Ndef.
 
