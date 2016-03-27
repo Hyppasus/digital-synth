@@ -10,11 +10,12 @@ Program change can move between synths by changing the source of the Ndef.
 */
 
 //This is the main tool
-
+/*
+// use this for testing
 a={SinOsc.ar(666)!2};
 b={Saw.ar(666)!2};
 c={WhiteNoise.ar(0.1)!2};
-
+*/
 Ndef(\synth).play;
 Ndef(\synth).fadeTime=4;
 Ndef(\synth).pause;
