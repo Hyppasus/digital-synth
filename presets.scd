@@ -12,9 +12,9 @@ Program change can move between synths by changing the source of the Ndef.
 //This is the main tool
 /*
 // use this for testing
-a={SinOsc.ar(666)!2};
-b={Saw.ar(666)!2};
-c={WhiteNoise.ar(0.1)!2};
+~synth1={SinOsc.ar([440,660])};
+~synth2={Saw.ar([440,660])};
+~synth3={WhiteNoise.ar(0.1)!2};
 */
 Ndef(\synth).play;
 Ndef(\synth).fadeTime=4;
@@ -26,39 +26,41 @@ Ndef(\synth).source=~synth2;
 Ndef(\synth).source=~synth3;
 Ndef(\synth).source=~synth4;
 
+MIDIClient.init;
+MIDIIn.connectAll;
 
 // Map to your controller
 (
-~cc1 = 2;
-~cc2 = 4;
-~cc3 = 7;
-~cc4 = 3;
-~cc5 = 5;
-~cc6 = 8;
+~cc1 = 4;
+~cc2 = 2;
+~cc3 = 16;
+~cc4 = 17;
+~cc5 = 18;
+~cc6 = 19;
 
-~cc7 = 1;
+~cc7 = 3;
 
-~cc8 = 11;
-~cc9 = 12;
-~cc10 = 13;
+~cc8 = 5;
+~cc9 = 11;
+~cc10 = 12;
 
-~cc11 = 16;
-~cc12 = 17;
-~cc13 = 18;
-~cc14 = 19;
+~cc11 = 13;
+~cc12 = 7;
+~cc13 = 30;
+~cc14 = 31;
 
-~cc15 = 20;
-~cc16 = 21;
-~cc17 = 22;
-~cc18 = 23;
-
-~cc19 = 24;
-~cc20 = 26;
-~cc21 = 92;
-
-~cc22 = 29;
-~cc23 = 30;
-~cc24 = 31;
+~cc15 = 29;
+// ~cc16 = 21;
+// ~cc17 = 22;
+// ~cc18 = 23;
+//
+// ~cc19 = 24;
+// ~cc20 = 26;
+// ~cc21 = 92;
+//
+// ~cc22 = 29;
+// ~cc23 = 30;
+// ~cc24 = 31;
 
 );
 
@@ -68,19 +70,23 @@ Ndef(\synth).source=~synth4;
 //assign them to the synth
 (
 25.do{|i|var env = currentEnvironment.at(("cc"++i).asSymbol);
-	MIDIFunc.cc({|val,num,ch,src|Ndef(\synth).set(\cc10, val)},env);
+	MIDIFunc.cc({|val,num,ch,src|Ndef(\synth).set(("cc"++i).asSymbol, val);[num,val].postln},env);
 };
 );
-
-
+// assign note on messages
+MIDIFunc.noteOn({arg vel, note, ch, src;Ndef(\synth).set(\note, note, \tgate, 1)});
+MIDIFunc.noteOff({arg vel, note, ch, src;Ndef(\synth).set(\tgate, 0)});
+MIDIFunc.noteOff({arg vel, note, ch, src;});
 //Sources
 (
-~synth1={arg cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10, cc11, cc12, cc13, cc14, cc15, cc16, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
+~synth1={arg note=60, vol= 1, tgate=1, cc1=60, cc2=1, cc3=0, cc4=0, cc5=127, cc6=20, cc7=1, cc8=0, cc9=120, cc10=0, cc11=0, cc12=127, cc13, cc14, cc15, cc16, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
 
-	var carFreq= 30, modFreq=40, gate=1, attack=1, decay=1, sustain=120, release=4, depth=10, offset=10, ffreq = 120, rq = 0, morphing = 0, amp=127;
-    var modulator, carrier, filter1, filter2, output, env;
+	var carFreq, modFreq, attack, decay, sustain, release, depth, offset, ffreq, rq, morphing, amp;
+	var delay, feedback, wet;
+    var modulator, carrier, filter1, filter2, output, env, gate=1, pos=0;
 
-	carFreq = cc1.linlin(0, 127, 20, 20000);
+	carFreq = note.midicps;
+	//carFreq = cc1.linlin(0, 127, 20, 20000);
 	modFreq = cc2.linlin(0, 127, 20, 20000);
 	//gate = cc1.linlin(0, 127, 20, 20000);
 	attack = cc3.linlin(0, 127, 0, 2);
@@ -91,24 +97,31 @@ Ndef(\synth).source=~synth4;
 	depth = cc7.linlin(0, 127, 0.1, 2000);
 	offset = cc8.linlin(0, 127, 1, 20000);
 
-	ffreq = cc9.linlin(0, 127, 20, 20000);
+	ffreq = cc9.midicps;
 	rq = cc10.linlin(0, 127, 0, 1);
 	morphing = cc11.linlin(0, 127, -1, 1);
 	amp = cc12.linlin(0, 127, 0, 1);
 
-    env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), gate, doneAction:2);
+	delay = cc13.linlin(0,127,0.001,2);
+	feedback = cc14.linlin(0,127,0,1.0);
+	wet = cc15.linlin(0,127,-1,1);
+
+    env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), tgate, doneAction:0);
 	modulator = SinOsc.kr(modFreq,0,depth,offset);
     carrier = SinOsc.ar(carFreq+modulator);
-    filter1 = DFM1.ar(osc, ffreq, rq);
-    filter2 = BMoog.ar(osc, ffreq, rq, 2, 0.5);
-	//var filter1 = LPF.ar(osc, ffreq, rq);
-	//var filter2 = HPF.ar(osc, ffreq, rq);
-	output = XFade2.ar (filter1, filter2, morphing,);
-	output*env*0.5*amp;}
+    filter1 = DFM1.ar(carrier, ffreq, rq);
+    filter2 = BMoog.ar(carrier, ffreq, rq, 2, 0.5);
+	//var filter1 = LPF.ar(carrier, ffreq, rq);
+	//var filter2 = HPF.ar(carrier, ffreq, rq);
+	output = XFade2.ar (filter1, filter2, morphing);
+	output = XFade2.ar (output, PitchShift.ar(output,0.1,1,delay,feedback), wet);
+	Pan2.ar(output,pos,env*amp*vol);
+
+}
 );
 
 (
-~synth2={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, depth=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0,amp=1|
+~synth2={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, depth=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0, amp=1|
     var sin = Saw.kr(modFreq,depth,offset);
     var osc= Saw.ar(carFreq+sin);
     var filter1 = DFM1.ar(osc, ffreq, rq);
