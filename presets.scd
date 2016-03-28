@@ -16,8 +16,10 @@ Program change can move between synths by changing the source of the Ndef.
 ~synth2={Saw.ar([440,660])};
 ~synth3={WhiteNoise.ar(0.1)!2};
 */
+(
 Ndef(\synth).play;
 Ndef(\synth).fadeTime=4;
+)
 Ndef(\synth).pause;
 Ndef(\synth).resume;
 Ndef(\synth).clear;
@@ -25,10 +27,11 @@ Ndef(\synth).source=~synth1;
 Ndef(\synth).source=~synth2;
 Ndef(\synth).source=~synth3;
 Ndef(\synth).source=~synth4;
-
+Ndef(\synth).gui;
+(
 MIDIClient.init;
 MIDIIn.connectAll;
-
+);
 // Map to your controller
 (
 ~cc1 = 4;
@@ -48,7 +51,7 @@ MIDIIn.connectAll;
 ~cc14 = 31;
 
 ~cc15 = 29;
-// ~cc16 = 21;
+~cc16 = 4;
 // ~cc17 = 22;
 // ~cc18 = 23;
 //
@@ -68,10 +71,14 @@ MIDIIn.connectAll;
 //assign them to the synth
 (
 25.do{|i|var env = currentEnvironment.at(("cc"++i).asSymbol);
-	MIDIFunc.cc({|val,num,ch,src|Ndef(\synth).set(("cc"++i).asSymbol, val);[num,val].postln},env);
+	MIDIFunc.cc({|val,num,ch,src|Ndef(\synth).set(("cc"++i).asSymbol, val);
+		//[num,val].postln;
+		},env);
 };
 // assign note on messages
-MIDIFunc.noteOn({arg vel, note, ch, src;Ndef(\synth).set(\note, note, \tgate, 1)});
+MIDIFunc.noteOn({arg vel, note, ch, src;Ndef(\synth).set(\note, note, \tgate, 1);
+	//note.postln
+	});
 MIDIFunc.noteOff({arg vel, note, ch, src;Ndef(\synth).set(\tgate, 0)});
 
 );
@@ -111,12 +118,13 @@ MIDIFunc.noteOff({arg vel, note, ch, src;Ndef(\synth).set(\tgate, 0)});
 //	modulator = SinOsc.kr(modFreq,0,index,offset);
 //  carrier = SinOsc.ar(carFreq+modulator);
 	carrier = PMOsc.ar(carFreq, modFreq, index);
+	carrier = XFade2.ar (carrier, PitchShift.ar(carrier,0.1,1,delay,feedback), wet);
 	filter1 = DFM1.ar(carrier, ffreq, rq);
     filter2 = BMoog.ar(carrier, ffreq, rq, offset, 0.5);
 	//var filter1 = LPF.ar(carrier, ffreq, rq);
 	//var filter2 = HPF.ar(carrier, ffreq, rq);
 	output = XFade2.ar (filter1, filter2, morphing);
-	output = XFade2.ar (output, PitchShift.ar(output,0.1,1,delay,feedback), wet);
+
 	Pan2.ar(output,pos,env*amp*vol);
 
 }
@@ -125,17 +133,50 @@ MIDIFunc.noteOff({arg vel, note, ch, src;Ndef(\synth).set(\tgate, 0)});
 Ndef(\synth).source=~synth1;
 
 (
-~synth2={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, index=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0, amp=1|
-    var sin = Saw.kr(modFreq,index,offset);
-    var osc= Saw.ar(carFreq+sin);
-    var filter1 = DFM1.ar(osc, ffreq, rq);
-    var filter2 = BMoog.ar(osc, ffreq, rq, 2, 0.5);
+~synth2={arg note=60, vol= 1, tgate=1, cc1=60, cc2=1, cc3=0, cc4=0, cc5=0, cc6=120, cc7=127, cc8=60, cc9=120, cc10=0, cc11=0, cc12=127, cc13, cc14, cc15, cc16=0, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
+	var carFreq, modFreq, attack, decay, sustain, release, index, offset, ffreq, rq, morphing, amp, phase;
+	var delay, feedback, wet;
+    var modulator, carrier, filter1, filter2, output, env, gate=1, pos=0;
+
+
+	carFreq = note.midicps;
+	//carFreq = cc1.linlin(0, 127, 20, 20000);
+	modFreq = cc2.linlin(0, 127, 0.1, 1000);
+	//gate = cc1.linlin(0, 127, 20, 20000);
+	phase = cc16.linlin(0,127,0, pi);
+	index = cc3.linlin(0, 127, 0, 4*pi);
+	offset = cc4.linlin(0, 127, 1, 100);
+
+	attack = cc5.linlin(0, 127, 0, 2);
+	decay = cc6.linlin(0, 127, 0, 2);
+	sustain = cc7.linlin(0, 127, 0, 1);
+	release = cc8.linlin(0, 127, 0, 2);
+
+
+	ffreq = cc9.midicps;
+	rq = cc10.linlin(0, 127, 0, 1);
+	morphing = cc11.linlin(0, 127, -1, 1);
+	amp = cc12.linlin(0, 127, 0, 1);
+
+	delay = cc13.linlin(0,127,0.001,2);
+	feedback = cc14.linlin(0,127,0,1.0);
+	wet = cc15.linlin(0,127,-1,1);
+
+    env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), tgate, doneAction:0);
+	modulator = LFSaw.kr(modFreq,[phase],index,offset);
+    carrier= Saw.ar(carFreq+modulator);
+    filter1 = DFM1.ar(carrier, ffreq, rq);
+    filter2 = BMoog.ar(carrier, ffreq, rq, 2, 0.5);
 	//var filter1 = LPF.ar(osc, ffreq, rq);
 	//var filter2 = HPF.ar(osc, ffreq, rq);
-	var output = XFade2.ar (filter1, filter2, morphing,);
-    var env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), gate, doneAction:2);
-	output*env*0.5*amp;}
+	output = XFade2.ar (filter1, filter2, morphing,);
+
+	output*env*0.5*amp;
+
+}
 );
+
+Ndef(\synth).source=~synth2;
 
 (
 ~synth3={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, index=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0,amp=1|
