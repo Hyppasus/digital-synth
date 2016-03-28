@@ -32,15 +32,13 @@ MIDIIn.connectAll;
 // Map to your controller
 (
 ~cc1 = 4;
-~cc2 = 2;
-~cc3 = 16;
-~cc4 = 17;
-~cc5 = 18;
-~cc6 = 19;
-
-~cc7 = 3;
-
-~cc8 = 5;
+~cc2 = 9;
+~cc3 = 10;
+~cc4 = 1;
+~cc5 = 16;
+~cc6 = 17;
+~cc7 = 18;
+~cc8 = 19;
 ~cc9 = 11;
 ~cc10 = 12;
 
@@ -72,30 +70,33 @@ MIDIIn.connectAll;
 25.do{|i|var env = currentEnvironment.at(("cc"++i).asSymbol);
 	MIDIFunc.cc({|val,num,ch,src|Ndef(\synth).set(("cc"++i).asSymbol, val);[num,val].postln},env);
 };
-);
 // assign note on messages
 MIDIFunc.noteOn({arg vel, note, ch, src;Ndef(\synth).set(\note, note, \tgate, 1)});
 MIDIFunc.noteOff({arg vel, note, ch, src;Ndef(\synth).set(\tgate, 0)});
-MIDIFunc.noteOff({arg vel, note, ch, src;});
+
+);
+
 //Sources
 (
-~synth1={arg note=60, vol= 1, tgate=1, cc1=60, cc2=1, cc3=0, cc4=0, cc5=127, cc6=20, cc7=1, cc8=0, cc9=120, cc10=0, cc11=0, cc12=127, cc13, cc14, cc15, cc16, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
+~synth1={arg note=60, vol= 1, tgate=1, cc1=60, cc2=1, cc3=0, cc4=0, cc5=0, cc6=120, cc7=127, cc8=60, cc9=120, cc10=0, cc11=0, cc12=127, cc13, cc14, cc15, cc16, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
 
-	var carFreq, modFreq, attack, decay, sustain, release, depth, offset, ffreq, rq, morphing, amp;
+	var carFreq, modFreq, attack, decay, sustain, release, index, offset, ffreq, rq, morphing, amp;
 	var delay, feedback, wet;
     var modulator, carrier, filter1, filter2, output, env, gate=1, pos=0;
 
 	carFreq = note.midicps;
 	//carFreq = cc1.linlin(0, 127, 20, 20000);
-	modFreq = cc2.linlin(0, 127, 20, 20000);
+	modFreq = cc2.linlin(0, 127, 0.1, 1000);
 	//gate = cc1.linlin(0, 127, 20, 20000);
-	attack = cc3.linlin(0, 127, 0, 2);
-	decay = cc4.linlin(0, 127, 0, 2);
-	sustain = cc5.linlin(0, 127, 0, 1);
-	release = cc6.linlin(0, 127, 0, 2);
 
-	depth = cc7.linlin(0, 127, 0.1, 2000);
-	offset = cc8.linlin(0, 127, 1, 20000);
+	index = cc3.linlin(0, 127, 0, 4*pi);
+	offset = cc4.linlin(0, 127, 1, 1000);
+
+	attack = cc5.linlin(0, 127, 0, 2);
+	decay = cc6.linlin(0, 127, 0, 2);
+	sustain = cc7.linlin(0, 127, 0, 1);
+	release = cc8.linlin(0, 127, 0, 2);
+
 
 	ffreq = cc9.midicps;
 	rq = cc10.linlin(0, 127, 0, 1);
@@ -107,10 +108,11 @@ MIDIFunc.noteOff({arg vel, note, ch, src;});
 	wet = cc15.linlin(0,127,-1,1);
 
     env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), tgate, doneAction:0);
-	modulator = SinOsc.kr(modFreq,0,depth,offset);
-    carrier = SinOsc.ar(carFreq+modulator);
-    filter1 = DFM1.ar(carrier, ffreq, rq);
-    filter2 = BMoog.ar(carrier, ffreq, rq, 2, 0.5);
+//	modulator = SinOsc.kr(modFreq,0,index,offset);
+//  carrier = SinOsc.ar(carFreq+modulator);
+	carrier = PMOsc.ar(carFreq, modFreq, index);
+	filter1 = DFM1.ar(carrier, ffreq, rq);
+    filter2 = BMoog.ar(carrier, ffreq, rq, offset, 0.5);
 	//var filter1 = LPF.ar(carrier, ffreq, rq);
 	//var filter2 = HPF.ar(carrier, ffreq, rq);
 	output = XFade2.ar (filter1, filter2, morphing);
@@ -120,9 +122,11 @@ MIDIFunc.noteOff({arg vel, note, ch, src;});
 }
 );
 
+Ndef(\synth).source=~synth1;
+
 (
-~synth2={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, depth=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0, amp=1|
-    var sin = Saw.kr(modFreq,depth,offset);
+~synth2={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, index=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0, amp=1|
+    var sin = Saw.kr(modFreq,index,offset);
     var osc= Saw.ar(carFreq+sin);
     var filter1 = DFM1.ar(osc, ffreq, rq);
     var filter2 = BMoog.ar(osc, ffreq, rq, 2, 0.5);
@@ -134,8 +138,8 @@ MIDIFunc.noteOff({arg vel, note, ch, src;});
 );
 
 (
-~synth3={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, depth=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0,amp=1|
-    var sin = Pulse.kr(modFreq,0.5,depth,offset);
+~synth3={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, index=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0,amp=1|
+    var sin = Pulse.kr(modFreq,0.5,index,offset);
     var osc= LFTri.ar(carFreq+sin);
     var filter1 = DFM1.ar(osc, ffreq, rq);
     var filter2 = BMoog.ar(osc, ffreq, rq, 2, 0.5);
@@ -148,8 +152,8 @@ MIDIFunc.noteOff({arg vel, note, ch, src;});
 
 
 (
-~synth4={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, depth=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0,amp=1|
-    //var sin = Pulse.kr(modFreq,0.5,depth,offset);
+~synth4={|carFreq= 313, modFreq=440, gate=1, attack=0.01, decay=0.2, sustain=1, index=100, offset=10 release=0.1, ffreq = 10000 , rq = 1,morphing = 0,amp=1|
+    //var sin = Pulse.kr(modFreq,0.5,index,offset);
 	var sin = Dseq([60,63,62,67,68,67,72].midicps,inf);
 	var arp = Demand.kr(Impulse.kr(modFreq),0,sin);
     var osc= LFTri.ar(carFreq+arp);
