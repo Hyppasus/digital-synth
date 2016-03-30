@@ -15,6 +15,7 @@ Program change can move between synths by changing the source of the Ndef.
 ~synth1={SinOsc.ar([440,660])};
 ~synth2={Saw.ar([440,660])};
 ~synth3={WhiteNoise.ar(0.1)!2};
+~synth4={Silence.ar()};
 */
 (
 Ndef(\synth).play;
@@ -62,6 +63,37 @@ MIDIIn.connectAll;
 // ~cc22 = 29;
 // ~cc23 = 30;
 // ~cc24 = 31;
+
+);
+
+//default cc
+(
+~cc1 = 1;
+~cc2 = 2;
+~cc3 = 3;
+~cc4 = 4;
+~cc5 = 5;
+~cc6 = 6;
+~cc7 = 7;
+~cc8 = 8;
+~cc9 = 9;
+~cc10 = 10;
+
+~cc11 = 11;
+~cc12 = 12;
+~cc13 = 13;
+~cc14 = 14;
+
+~cc15 = 15;
+~cc16 = 16;
+~cc17 = 17;
+~cc18 = 18;
+~cc19 = 19;
+~cc20 = 20;
+~cc21 = 21;
+~cc22 = 22;
+~cc23 = 23;
+~cc24 = 24;
 
 );
 
@@ -133,25 +165,31 @@ MIDIFunc.noteOff({arg vel, note, ch, src;Ndef(\synth).set(\tgate, 0)});
 Ndef(\synth).source=~synth1;
 
 (
-~synth2={arg note=60, vol= 1, tgate=1, cc1=60, cc2=1, cc3=0, cc4=0, cc5=0, cc6=120, cc7=127, cc8=60, cc9=120, cc10=0, cc11=0, cc12=127, cc13, cc14, cc15, cc16=0, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
-	var carFreq, modFreq, attack, decay, sustain, release, index, offset, ffreq, rq, morphing, amp, phase;
+~synth2={arg note=60, vol= 1, tgate=1, cc1=60, cc2=1, cc3=0, cc4=0, cc5=0, cc6=0, cc7=127, cc8=60, cc9=120, cc10=0, cc11=0, cc12=127, cc13, cc14, cc15, cc16, cc17, cc18, cc19, cc20, cc21, cc22, cc23, cc24, cc25, cc26, cc27, cc28, cc29, cc30;
+
+	var carFreq, modFreq, attack, decay, sustain, release, index, offset, ffreq, rq, morphing, amp;
 	var delay, feedback, wet;
     var modulator, carrier, filter1, filter2, output, env, gate=1, pos=0;
-
+	var envFilter, attackFilter, decayFilter, sustainFilter, releaseFilter, saturation, envamount;
 
 	carFreq = note.midicps;
 	//carFreq = cc1.linlin(0, 127, 20, 20000);
 	modFreq = cc2.linlin(0, 127, 0.1, 1000);
 	//gate = cc1.linlin(0, 127, 20, 20000);
-	phase = cc16.linlin(0,127,0, pi);
+
 	index = cc3.linlin(0, 127, 0, 4*pi);
-	offset = cc4.linlin(0, 127, 1, 100);
+	//offset = cc4.linlin(0, 127, 1, 1000);
+	saturation = cc4.linlin(0, 127, 1, 1000);
 
 	attack = cc5.linlin(0, 127, 0, 2);
 	decay = cc6.linlin(0, 127, 0, 2);
 	sustain = cc7.linlin(0, 127, 0, 1);
 	release = cc8.linlin(0, 127, 0, 2);
 
+	attackFilter = cc15.linlin(0, 127, 0, 2);
+	decayFilter = cc16.linlin(0, 127, 0, 2);
+	sustainFilter = cc17.linlin(0, 127, 1, 10);
+	releaseFilter = cc18.linlin(0, 127, 0, 2);
 
 	ffreq = cc9.midicps;
 	rq = cc10.linlin(0, 127, 0, 1);
@@ -160,18 +198,26 @@ Ndef(\synth).source=~synth1;
 
 	delay = cc13.linlin(0,127,0.001,2);
 	feedback = cc14.linlin(0,127,0,1.0);
-	wet = cc15.linlin(0,127,-1,1);
+	wet = cc20.linlin(0,127,-1,1);
 
     env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), tgate, doneAction:0);
-	modulator = LFSaw.kr(modFreq,[phase],index,offset);
-    carrier= Saw.ar(carFreq+modulator);
-    filter1 = DFM1.ar(carrier, ffreq, rq);
-    filter2 = BMoog.ar(carrier, ffreq, rq, 2, 0.5);
-	//var filter1 = LPF.ar(osc, ffreq, rq);
-	//var filter2 = HPF.ar(osc, ffreq, rq);
-	output = XFade2.ar (filter1, filter2, morphing,);
+	envFilter = EnvGen.ar(Env.adsr(attackFilter,decayFilter,sustainFilter,releaseFilter), tgate, doneAction:0);
+//	modulator = SinOsc.kr(modFreq,0,index,offset);
+//  carrier = SinOsc.ar(carFreq+modulator);
+	//carrier = PMOsc.ar(carFreq, modFreq, index);
+	//carrier = XFade2.ar (carrier, PitchShift.ar(carrier,0.1,1,delay,feedback), wet);
+	//filter1 = DFM1.ar(carrier, ffreq, rq);
+    //filter2 = BMoog.ar(carrier, ffreq, rq, offset, 0.5);
+	//var filter1 = LPF.ar(carrier, ffreq, rq);
+	//var filter2 = HPF.ar(carrier, ffreq, rq);
+	//output = XFade2.ar (filter1, filter2, morphing);
 
-	output*env*0.5*amp;
+	//output = Pulse.ar(carFreq,[rq,rq+0.1]);
+	output = SawDPW.ar(carFreq,[index,index+0.1]);
+	output = BMoog.ar(output, ffreq*envFilter, rq, saturation, 0.5);
+	//Pan2.ar(output,pos,env*amp*vol);
+
+	output*env*amp*vol
 
 }
 );
