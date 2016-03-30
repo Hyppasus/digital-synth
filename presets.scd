@@ -170,7 +170,7 @@ Ndef(\synth).source=~synth1;
 	var carFreq, modFreq, attack, decay, sustain, release, index, offset, ffreq, rq, morphing, amp;
 	var delay, feedback, wet;
     var modulator, carrier, filter1, filter2, output, env, gate=1, pos=0;
-	var envFilter, attackFilter, decayFilter, sustainFilter, releaseFilter, saturation, envamount;
+	var envFilter, attackFilter, decayFilter, sustainFilter, releaseFilter, saturation=1, envamountFilter=0;
 
 	carFreq = note.midicps;
 	//carFreq = cc1.linlin(0, 127, 20, 20000);
@@ -188,8 +188,9 @@ Ndef(\synth).source=~synth1;
 
 	attackFilter = cc15.linlin(0, 127, 0, 2);
 	decayFilter = cc16.linlin(0, 127, 0, 2);
-	sustainFilter = cc17.linlin(0, 127, 1, 10);
+	sustainFilter = cc17.linlin(0, 127, 0, 100);
 	releaseFilter = cc18.linlin(0, 127, 0, 2);
+	envamountFilter = cc19.linlin(0, 127, 0, 1);
 
 	ffreq = cc9.midicps;
 	rq = cc10.linlin(0, 127, 0, 1);
@@ -201,7 +202,7 @@ Ndef(\synth).source=~synth1;
 	wet = cc20.linlin(0,127,-1,1);
 
     env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), tgate, doneAction:0);
-	envFilter = EnvGen.ar(Env.adsr(attackFilter,decayFilter,sustainFilter,releaseFilter), tgate, doneAction:0);
+	envFilter = EnvGen.ar(Env.adsr(attackFilter,decayFilter,1,releaseFilter), tgate, doneAction:0)*sustainFilter;
 //	modulator = SinOsc.kr(modFreq,0,index,offset);
 //  carrier = SinOsc.ar(carFreq+modulator);
 	//carrier = PMOsc.ar(carFreq, modFreq, index);
@@ -214,7 +215,7 @@ Ndef(\synth).source=~synth1;
 
 	//output = Pulse.ar(carFreq,[rq,rq+0.1]);
 	output = SawDPW.ar(carFreq,[index,index+0.1]);
-	output = BMoog.ar(output, ffreq*envFilter, rq, saturation, 0.5);
+	output = BMoog.ar(output, ffreq*(envFilter*envamountFilter+0.01), rq, 0.5);
 	//Pan2.ar(output,pos,env*amp*vol);
 
 	output*env*amp*vol
