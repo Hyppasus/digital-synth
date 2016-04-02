@@ -2,12 +2,12 @@
 SynthDef(\waveshaper,
 	{
 		arg freq = 140, amp = 0.4, srcAmp = 0.3, att = 0.01, rel = 1.5;
-		var src, shaped, out, playHead, env, tableSize = 1000, transTable, tableInput, tableFreq;
+		var src, shaped, out, playHead, env, tableSize = 2000, transTable, tableInput, tableFreq;
 
 		transTable = LocalBuf.new(tableSize, 1).clear;
 		tableFreq = SampleRate.ir/tableSize;
 		//tableInput = LFTri.ar(tableFreq);
-		tableInput = Mix(SinOsc.ar(tableFreq * (1 .. 6), Array.linrand(6, 0.0, 6.28), SinOsc.kr(Array.exprand(6, 0.1, 0.3), 0, 0.2)));
+		tableInput = Mix(SinOsc.ar(tableFreq * (1 .. 2), Array.linrand(6, 0.0, 6.28), SinOsc.kr(Array.exprand(6, 0.1, 20), 0, 0.2)));
 		BufWr.ar(tableInput, transTable, Phasor.ar(0, BufRateScale.kr(transTable), 0, tableSize));
 
 		env = EnvGen.kr(Env.perc(att, rel), doneAction: 2);
