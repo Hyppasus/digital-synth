@@ -197,7 +197,7 @@ Server.default.waitForBoot{
 	reverb = GVerb.ar(filters,100,delay,0.5,0.5,15,feedback,0.7,0.5,300,fxAmp1);
 	//delays = SwitchDelay.ar(filters,1,1,delay,feedback,2,1,filters);
 	delays = CombC.ar(filters,2,delay,feedback,fxAmp2,filters);
-	pitchShift = PitchShift.ar(filters,0.2,delay*4,feedback,fxAmp3);
+	pitchShift = PitchShift.ar(filters,0.2,delay*4,feedback,1,fxAmp3);
 	//output = filters;
 	fx = Mix([reverb, delays, pitchShift]);
 	output = XFade2.ar (filters, fx, wet);
