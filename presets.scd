@@ -90,16 +90,16 @@ Server.default.waitForBoot{
 ~synth0={Silence.ar!2};
 
 (
-~synth1={arg note=60, vel= 1, tgate=1, bend=0, cc1=60, cc2=1, cc3=0, cc4=0, cc5=0, cc6=0, cc7=60, cc8=60, cc9=120, cc10=0, cc11=127, cc12=0, cc13, cc14, cc15, cc16=0.01, cc17=127, cc18=127, cc19=127, cc20=10, cc21=30, cc22=100, cc23=40, cc24, cc25, cc26, cc27, cc28, cc29, cc30, cc31, cc32, cc33, cc34, cc35, cc64, cc65, cc82=1, cc83=0, cc84=0, cc88=0, cc90=0, cc91=1, cc92=0;
+~synth1={arg note=60, vel= 1, tgate=1, bend=0, cc1=60, cc2=1, cc3=0, cc4=0, cc5=0, cc6=0, cc7=60, cc8=60, cc9=120, cc10=0, cc11=127, cc12=0, cc13, cc14, cc15, cc16=0.01, cc17=127, cc18=127, cc19=127, cc20=10, cc21=30, cc22=100, cc23=40, cc24, cc25, cc26, cc27, cc28, cc29, cc30, cc31, cc32, cc33, cc34, cc35, cc64, cc65, cc81=0, cc82=1, cc83=0, cc84=0, cc88=0, cc90=0, cc91=1, cc92=0;
 
 	var output, env, velCtrl, gate=1, pos=0, oscillators, filters, fx;
 	var oscillator1, oscillator2=1, carFreq=1, modFreq, waveform1, waveform2, amp1, amp2, amp3=0;
 	var modulation, lfo=1, lfoFreq=1, lfoAmp=1, waveformLfo, lfoPitchAmnt=1, lfoFilterAmnt=0, lfoWaveAmnt=0;
 	var octave1=1, octave2=1, bendFactor=0, suboscillator;
-	var attack, decay, sustain, release, index, offset, ffreq, rq, saturation=1, morphing=0,keyTrack=0;
+	var attack, decay, sustain, release, index, offset, ffreq, rq, saturation=1, morphing=0, keyTrack=0;
 	var delay, feedback, wet, reverb, pitchShift, delays, fxAmp1,fxAmp2, fxAmp3;
 	var modulator, carrier, filter1, filter2;
-	var envFilter, attackFilter, decayFilter, sustainFilter, releaseFilter, envamountFilter=0;
+	var envFilter, attackFilter, decayFilter, sustainFilter, releaseFilter, envAmountFilter, velocityAmountFilter;
 	var envPitch, envLfoRate, envLfoAmp;
 
 
@@ -117,9 +117,9 @@ Server.default.waitForBoot{
 	lfoFilterAmnt = cc90.linlin(0,64,0,1) < 0.6;
 	lfoWaveAmnt = (cc90 < 127) & (cc90 > 0);
 	envPitch = cc10.linlin(0,127,0,1);
-	envLfoRate = cc91.linlin(0,127,0,1) > 0.6;
-	envLfoAmp = cc91.linlin(0,127,0,1) < 0.6;
-	//carFreq = cc1.linlin(0, 127, 20, 20000);
+	envLfoAmp = cc91.linlin(0,127,0,1) > 0.6;
+	envLfoRate = (cc91 < 127) & (cc91 > 0);
+
 	modFreq = ((note.midicps*octave2)+bendFactor) + cc3.linlin(0, 127, 1, 1000);
 	fxAmp1 = cc88.linlin(0,127,0,1) > 0.6;
 	fxAmp2 = cc88.linlin(0,64,0,1) < 0.6;
@@ -127,7 +127,7 @@ Server.default.waitForBoot{
 
 	index = cc10.linlin(0, 127, 0, 4*pi);
 	//offset = cc4.linlin(0, 127, 1, 1000);
-	saturation = cc82.linlin(0, 127, 1, 4);
+	saturation = cc81.linlin(0, 127, 1, 2);
 
 	attack = cc16.linlin(0, 127, 1e-5, 2);
 	decay = cc17.linlin(0, 127, 1e-5, 2);
@@ -138,7 +138,8 @@ Server.default.waitForBoot{
 	decayFilter = cc21.linlin(0, 127, 0, 2);
 	sustainFilter = cc22.linlin(0, 127, 0, 1000);
 	releaseFilter = cc23.linlin(0, 127, 0, 2);
-	envamountFilter = cc13.linlin(0, 127, 0, 1);
+	envAmountFilter = cc13.linlin(0, 127, 0, 1);
+	velocityAmountFilter = cc82.linlin(0,127,0,1);
 
 	rq = cc12.linlin(0, 127, 0, 2);
 	morphing = cc84.linlin(0, 127, 0, 1);
@@ -175,7 +176,7 @@ Server.default.waitForBoot{
 	carFreq = ((note.midicps*octave1)+bendFactor) + cc2.linlin(0, 127, 1, 1000) +
 	(oscillator2*modulation) + (lfo * lfoPitchAmnt) + (envFilter * envPitch);
 	keyTrack = cc83.linlin(0,127,0,2);
-	ffreq = cc11.midicps+(note.midicps*keyTrack) + (lfo * lfoFilterAmnt);
+	ffreq = cc11.midicps+(note.midicps*keyTrack) + (lfo * lfoFilterAmnt) + (vel.midicps*velocityAmountFilter);
 
 
 	oscillator1 = SelectX.ar(waveform1, [
@@ -190,9 +191,9 @@ Server.default.waitForBoot{
 
 	//oscillators = (oscillator1 * amp1) + (oscillator2 * amp2) + (suboscillator * amp3);
 	oscillators = Mix([oscillator1*amp1, oscillator2*amp2, suboscillator*amp3]);
-	//output = BMoog.ar(output, ffreq+((envFilter.max(20).min(20000))*envamountFilter), rq, 0.5);
-	//output = RLPF.ar(output, ffreq+((envFilter.max(20).min(20000))*envamountFilter), 1-rq);
-	filters = DFM1.ar(oscillators, ffreq+((envFilter.max(20).min(20000))*envamountFilter), rq, saturation, morphing);
+	//output = BMoog.ar(output, ffreq+((envFilter.max(20).min(20000))*envAmountFilter), rq, 0.5);
+	//output = RLPF.ar(output, ffreq+((envFilter.max(20).min(20000))*envAmountFilter), 1-rq);
+	filters = DFM1.ar(oscillators, ffreq+((envFilter.max(20).min(20000))*envAmountFilter), rq, saturation, morphing);
 
 	reverb = GVerb.ar(filters,100,delay,0.5,0.5,15,feedback,0.7,0.5,300,fxAmp1);
 	//delays = SwitchDelay.ar(filters,1,1,delay,feedback,2,1,filters);
