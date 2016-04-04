@@ -4,9 +4,10 @@ Fixing the midi mapping allow to move from one to another preset without remappi
 For that the arguments have to be shared between synths and the scaling of the values can be done inside the synth.
 I suggest to use generic names like cc1, cc2...etc and remap them inside the synth with names that make more sense to the UGen's graph.
 All the controllers come inside the synth on the midi range and get the actual values inside the synth, this allow to control different ranges with the same controller.
-In the code below an example of setting 24 continuos controls, note in and pitch bend.
+In the code below an example of setting 127 continuos controls, note on/off and pitchbend.
 Program change can move between synths by changing the source of the Ndef.
-
+The ~synth0 initialize the Ndef as stereo.
+The code of ~synth1 is not optimal for CPU resources since several UGens run simultaneously without been used all the time, however the load is not big and it's been tested in a raspberry pi 2.
 */
 
 //This is the idea
