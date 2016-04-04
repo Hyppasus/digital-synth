@@ -98,7 +98,7 @@ Server.default.waitForBoot{
 	var octave1=1, octave2=1, bendFactor=0, suboscillator;
 	var attack, decay, sustain, release, index, offset, ffreq, rq, saturation=1, morphing=0,keyTrack=0;
 	var delay, feedback, wet, reverb, pitchShift, delays, fxAmp1,fxAmp2, fxAmp3;
-    var modulator, carrier, filter1, filter2;
+	var modulator, carrier, filter1, filter2;
 	var envFilter, attackFilter, decayFilter, sustainFilter, releaseFilter, envamountFilter=0;
 	var envPitch, envLfoRate, envLfoAmp;
 
@@ -148,7 +148,7 @@ Server.default.waitForBoot{
 	wet = cc29.linlin(0,127,-1,1);
 
 
-    env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), tgate, levelScale:velCtrl, doneAction:0);
+	env = EnvGen.ar(Env.adsr(attack,decay,sustain,release), tgate, levelScale:velCtrl, doneAction:0);
 	envFilter = EnvGen.ar(Env.adsr(attackFilter,decayFilter,1,releaseFilter), tgate, levelScale:sustainFilter,doneAction:0);
 
 	lfoFreq = cc24.linexp(0,127,0.1,100) + (envFilter * envLfoRate);
