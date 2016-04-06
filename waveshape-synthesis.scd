@@ -2,15 +2,16 @@
 SynthDef(\waveshaper,
 	{
 		arg freq = 140, amp = 0.4, srcAmp = 0.3, envDepth = 0.5, att = 0.01, rel = 1.5, cutoff = 4000, feedback = 0;
-		var src, shaped, out, srcIndex, env, tableSize = 1000, transTable, tableInput, tableFreq, localLoop, tableIndex;
+		var src, shaped, out, srcIndex, env, tableSize = 1000, transTable, tableInput, tableFreq, localLoop, tableIndex, feedbackAmps;
 
 		localLoop = LocalIn.ar(1, 0);
+		feedbackAmps = [1, feedback].normalizeSum;
 
 		transTable = LocalBuf.new(tableSize, 1).clear;
 		tableFreq = SampleRate.ir/tableSize;
 		//tableInput = Saw.ar(tableFreq); //-->testfunction (shouldn't have an effect on src...)
 		//tableInput = Mix.ar(SinOsc.ar(tableFreq* (1..4), 0, 4.reciprocal))+(localLoop*feedback).tanh;
-		tableInput = SinOsc.ar(tableFreq*4, 0, SinOsc.ar(tableFreq*3,0,SinOsc.ar(tableFreq*2,0,SinOsc.ar(tableFreq))))+(localLoop*feedback);
+		tableInput = (SinOsc.ar(tableFreq*4, 0, SinOsc.ar(tableFreq*3,0,SinOsc.ar(tableFreq*2,0,SinOsc.ar(tableFreq))))*feedbackAmps[0])+(localLoop*feedbackAmps[1]).softclip;
 		freq = freq/2;
 
 		BufWr.ar(tableInput, transTable, Phasor.ar(0, BufRateScale.kr(transTable), 0, tableSize));
@@ -40,7 +41,7 @@ SynthDef(\waveshaper,
 		\att, Pwhite(0.1, 0.5, inf),
 		\rel, Pwhite(3, 4.5, inf),
 		\envDepth, 0.3,
-		\feedback, 0,
+		\feedback, 0.4,
 		\cutoff, 6000,
 		\amp, Pwhite(0.4, 0.5, inf),
 		\dur, Prand([0.5, 0.25, 0.75], inf),
